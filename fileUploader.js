@@ -29,7 +29,6 @@ function FileUploader(item, options) {
 
     that = this;
     this.item.on('change', function() {
-        console.log('Changed !');
         that.file = $(this)[0].files[0];
         that.upload();
     })
