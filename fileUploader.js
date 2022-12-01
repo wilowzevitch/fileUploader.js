@@ -52,8 +52,12 @@ FileUploader.prototype.upload = function () {
     // add assoc key values, this will be posts values
     formData.append("file", this.file, this.getName());
 
-    if (this.options.beforeUpload && typeof this.options.beforeUpload === 'function')
-        this.options.beforeUpload(formData);
+    if (this.options.beforeUpload && typeof this.options.beforeUpload === 'function') {
+        const success = this.options.beforeUpload(formData);
+        if (!success) {
+            return false;
+        }
+    }
 
     $.ajax({
         type: "POST",

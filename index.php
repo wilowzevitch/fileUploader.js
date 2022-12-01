@@ -12,6 +12,10 @@
         $(function() {
             $("#file").fileUploader({
                 url: 'processing.php',
+                beforeUpload: function(formData) {
+                    formData.append("nom", 'valeur');
+                    return true;
+                },
                 processing: function(percent) {
                     console.log('Processing ... '+percent+'%');
                 },
