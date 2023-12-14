@@ -16,6 +16,7 @@ function FileUploader(item, options) {
         processing: false,
         success: false,
         beforeUpload: false,
+        multiple: true
     };
 
     /* Construct */
@@ -28,9 +29,16 @@ function FileUploader(item, options) {
     }
 
     that = this;
-    this.item.on('change', function() {
-        that.file = $(this)[0].files[0];
-        that.upload();
+    this.item.on('change', function(e) {
+        if (that.options.multiple) {
+            for (var i = 0; i < $(this)[0].files.length; i++) {
+                that.file = $(this)[0].files[i];
+                that.upload(e.target);
+            }
+        } else {
+            that.file = $(this)[0].files[0];
+            that.upload(e.target);
+        }
     })
 }
 
@@ -44,7 +52,7 @@ FileUploader.prototype.getSize = function() {
 FileUploader.prototype.getName = function() {
     return this.file.name;
 };
-FileUploader.prototype.upload = function () {
+FileUploader.prototype.upload = function (item) {
     var that = this;
     var formData = new FormData();
 
@@ -52,19 +60,21 @@ FileUploader.prototype.upload = function () {
     formData.append("file", this.file, this.getName());
 
     if (this.options.beforeUpload && typeof this.options.beforeUpload === 'function') {
-        const success = this.options.beforeUpload(formData);
+        const success = this.options.beforeUpload(formData, item);
         if (!success) {
             return false;
         }
     }
 
     $.ajax({
-        type: "POST",
+        method: "POST",
+        type: "POST",   // For JQuery < 1.9
         url: this.options.url,
         xhr: function () {
             var myXhr = $.ajaxSettings.xhr();
             if (myXhr.upload && that.options.processing && typeof that.options.processing === 'function') {
                 myXhr.upload.processing = that.options.processing;
+                myXhr.upload.itemProcessing = item;
                 myXhr.upload.addEventListener('progress', that.progressHandling, false);
             }
             return myXhr;
@@ -72,7 +82,7 @@ FileUploader.prototype.upload = function () {
         success: function (data) {
             that.item.val('');
             if (that.options.success)
-                that.options.success(data);
+                that.options.success(data, item);
         },
         error: function (error) {
             // handle error
@@ -94,7 +104,7 @@ FileUploader.prototype.progressHandling = function (event) {
     if (event.lengthComputable) {
         percent = Math.ceil(position / total * 100);
     }
-    event.currentTarget.processing(percent, event);
+    event.currentTarget.processing(percent, event, event.currentTarget.itemProcessing);
 };
 $.fn.fileUploader = function(options) {
     return this.each(function() {
