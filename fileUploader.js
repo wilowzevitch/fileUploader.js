@@ -1,5 +1,14 @@
-function FileUploader(item, options) {
+/**
+ * FileUploader.js
+ * Author: Tisserand David
+ * v1.2 2023-12-14
+ * 
+ * Need JQuery
+ * 
+ */
 
+
+function FileUploader(item, options) {
 
     this.item = $(item);
 
@@ -13,10 +22,11 @@ function FileUploader(item, options) {
     /* Default Config */
     var defaults = {
         url: false,
+        multiple: true,
+        before: false,
         processing: false,
         success: false,
-        beforeUpload: false,
-        multiple: true
+        error: false
     };
 
     /* Construct */
@@ -42,16 +52,18 @@ function FileUploader(item, options) {
     })
 }
 
-
 FileUploader.prototype.getType = function() {
     return this.file.type;
 };
+
 FileUploader.prototype.getSize = function() {
     return this.file.size;
 };
+
 FileUploader.prototype.getName = function() {
     return this.file.name;
 };
+
 FileUploader.prototype.upload = function (item) {
     var that = this;
     var formData = new FormData();
@@ -59,8 +71,8 @@ FileUploader.prototype.upload = function (item) {
     // add assoc key values, this will be posts values
     formData.append("file", this.file, this.getName());
 
-    if (this.options.beforeUpload && typeof this.options.beforeUpload === 'function') {
-        const success = this.options.beforeUpload(formData, item);
+    if (this.options.before && typeof this.options.before === 'function') {
+        const success = this.options.before(formData, item, this.file);
         if (!success) {
             return false;
         }
@@ -81,11 +93,12 @@ FileUploader.prototype.upload = function (item) {
         },
         success: function (data) {
             that.item.val('');
-            if (that.options.success)
-                that.options.success(data, item);
+            if (that.options.success && typeof that.options.success == 'function')
+                that.options.success(data, item, that.file);
         },
         error: function (error) {
-            // handle error
+            if (that.options.error && typeof that.options.error == 'function')
+                that.options.error(data, item, that.file);
         },
         async: true,
         data: formData,
@@ -106,9 +119,11 @@ FileUploader.prototype.progressHandling = function (event) {
     }
     event.currentTarget.processing(percent, event, event.currentTarget.itemProcessing);
 };
+
 $.fn.fileUploader = function(options) {
     return this.each(function() {
         new FileUploader(this,options);
     });
 };
+
 $.fn.fileUploader.Constructor = FileUploader;
